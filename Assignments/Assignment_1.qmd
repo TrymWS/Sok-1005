@@ -1,0 +1,106 @@
+---
+title: "Assignment_1"
+format: pdf
+editor: visual
+---
+
+## Sok-1005, Assignment 1 - "reading static web pages"
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+rm(list=ls())
+
+library(tidyverse)
+library(zoo)
+
+# Import dataframes
+# Choose 1980 - 2022
+# Make yearly averages
+# Rename columns
+
+df_lowT <- read_table2("https://www.nsstc.uah.edu/data/msu/v6.0/tlt/uahncdc_lt_6.0.txt")
+df_lowT <- df_lowT[14:529, ]
+df_lowT <- df_lowT[ , 1:3]
+
+df_lowT <- df_lowT %>% select(Year, Mo, Globe) %>%
+  mutate_if(is.character, ~as.numeric(.))
+
+df_lowT <- aggregate(x= df_lowT$Globe,
+         by = list(df_lowT$Year),
+         FUN = mean) 
+
+df_lowT <- df_lowT %>% 
+  rename("lowT" = "x", "Year" = "Group.1")
+
+df_midT <- read_table2("http://vortex.nsstc.uah.edu/data/msu/v6.0/tmt/uahncdc_mt_6.0.txt")
+df_midT <- df_midT[14:529, ]
+df_midT <- df_midT[ , 1:3]
+
+df_midT <- df_midT %>% select(Year, Mo, Globe) %>%
+  mutate_if(is.character, ~as.numeric(.))
+
+df_midT <- aggregate(x= df_midT$Globe,
+         by = list(df_midT$Year),
+         FUN = mean) 
+
+df_midT <- df_midT %>% 
+  rename("midT" = "x", "Year" = "Group.1")
+
+df_T <- read_table2("http://vortex.nsstc.uah.edu/data/msu/v6.0/ttp/uahncdc_tp_6.0.txt")
+df_T <- df_T[14:529, ]
+df_T <- df_T[ , 1:3]
+
+df_T <- df_T %>% select(Year, Mo, Globe) %>%
+  mutate_if(is.character, ~as.numeric(.))
+
+df_T <- aggregate(x= df_T$Globe,
+         by = list(df_T$Year),
+         FUN = mean) 
+
+df_T <- df_T %>% 
+  rename("T" = "x", "Year" = "Group.1")
+
+df_lowS <- read_table2("http://vortex.nsstc.uah.edu/data/msu/v6.0/tls/uahncdc_ls_6.0.txt")
+df_lowS <- df_lowS[14:529, ]
+df_lowS <- df_lowS[ , 1:3]
+
+df_lowS <- df_lowS %>% select(Year, Mo, Globe) %>%
+  mutate_if(is.character, ~as.numeric(.))
+
+df_lowS <- aggregate(x= df_lowS$Globe,
+         by = list(df_lowS$Year),
+         FUN = mean) 
+
+df_lowS <- df_lowS %>% 
+  rename("lowS" = "x", "Year" = "Group.1")
+
+################################################################################
+
+# Combine dataframes and calculate average
+
+
+df <-cbind(df_lowT, df_midT[c("midT")], df_T[c("T")], df_lowS[c("lowS")])
+
+df <- mutate(df, Average = rowMeans(select(df,c(lowT,midT,T,lowS)), na.rm = TRUE))
+
+```
+
+```{r}
+
+# make plot
+
+df %>% filter(Year >= 1980) %>% 
+  group_by(Year) %>% 
+  mutate(Average.Temp=mean(Average)) %>% 
+  ggplot(aes(x=Year, y=lowT)) +
+  geom_line(aes(y=rollmean(lowT, 1, fill=NA)), col="red", size=0.5) +
+  geom_line(aes(y=rollmean(midT, 1, fill=NA)), col="blue", size=0.5) +
+  geom_line(aes(y=rollmean(T, 1, fill=NA)), col="darkgreen", size=0.5) +
+  geom_line(aes(y=rollmean(lowS, 1, fill=NA)), col="darkblue", size=0.5) +
+  geom_line(aes(y=rollmean(Average, 1, fill=NA)), col="black", size=0.5) +
+  
+  labs(y = "Temperature", x = "Year", 
+      title = "Average global temperatures in the atmosphere", 
+      subtitle = "(1980-2022)") +
+  
+  theme_bw()
+```
