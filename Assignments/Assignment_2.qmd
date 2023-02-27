@@ -1,0 +1,98 @@
+---
+title: "SOK1005_Assignment_3"
+format: pdf
+editor: visual
+---
+
+```{r}
+rm(list=ls())
+# we first start loading relevant packages and libraries to scrap data and perform the analysis  
+library(tidyverse)
+library(rvest)  # for web scraping 
+library(janitor) # for data cleaning 
+library(lubridate) #to work with date
+library(quantmod) 
+library(stringr)
+```
+
+## Task 1
+
+```{r}
+url <- "https://www.motor.no/aktuelt/motors-store-vintertest-av-rekkevidde-pa-elbiler/217132"
+
+table <- url %>%
+  read_html() %>% 
+  html_nodes("table") %>% 
+  html_table() 
+head(table[[1]])
+
+df_1 <- table[[1]]
+df_2 <- table[[2]]
+```
+
+df_1\$STOPP=as.numeric(levels(df_1\$STOPP))\[df_1\$STOPP\]
+
+df_1\$WLTP=as.numeric(levels(df_1\$WLTP))\[df_1\$WLTP\]
+
+```{r}
+df_1 <- subset(df_1) %>%
+  rename("M_0_-10" = X1, WLTP = X2, STOPP = X3, Avvik = X4)
+
+df_1 <- df_1[-1,]
+df_1 <- df_1[-19,]
+df_1 <- df_1[-25,]
+```
+
+```{r}
+df_1$STOPP <- str_replace(df_1$STOPP, " km", "")
+
+df_1[c('WLTP', 'kWh')] <- str_split_fixed(df_1$WLTP, '/', 2)
+
+df_1$WLTP <- str_replace(df_1$WLTP, " km", "")
+
+df_1$STOPP=as.numeric(df_1$STOPP)
+df_1$WLTP=as.numeric(df_1$WLTP)
+```
+
+```{r}
+df_1 %>% 
+  ggplot(aes(x=WLTP, y=STOPP)) +
+  geom_point()+ 
+  geom_abline() +
+  xlim(200,600) +
+  ylim(200,600) +
+  labs(title = "Oppgitt rekkevidde vs testet rekkevidde",
+       subtitle = "Testet ved 0 til -10 Celcius",
+       y="Testet rekkevidde",
+       x="Oppgitt rekkevidde",
+       caption = "Kilde: https://www.motor.no/aktuelt/motors-store-vintertest-av-rekkevidde-pa-elbiler/217132")
+```
+
+As we can see in the figure, none of the cars lives up to the expectations of their advertised range. (Under the conditions 0 to -10 Celcius)
+
+If they lived up to their advertised range, they would be at the 45 degree line, and if they surpassed the expectations they would be above the 45 degree line.
+
+## Task 2
+
+```{r}
+lm(STOPP ~ WLTP, data = df_1)
+
+#geom_smooth(method = lm)
+```
+
+The WLTP seems to be about 86.71% of the expected range on average.
+
+```{r}
+df_1 %>% 
+  ggplot(aes(x=WLTP, y=STOPP)) +
+  geom_point()+ 
+  geom_abline() +
+  xlim(200,600) +
+  ylim(200,600) +
+  geom_smooth(method = lm)+
+  labs(title = "Oppgitt rekkevidde vs testet rekkevidde",
+       subtitle = "Testet ved 0 til -10 Celcius",
+       y="Testet rekkevidde",
+       x="Oppgitt rekkevidde",
+       caption = "Kilde: https://www.motor.no/aktuelt/motors-store-vintertest-av-rekkevidde-pa-elbiler/217132")
+```
