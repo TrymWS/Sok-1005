@@ -1,0 +1,88 @@
+---
+title: "Assignment 3"
+format: html
+editor: visual
+---
+
+# Assignment 3 - SOK-1005
+
+```{r}
+#Clear and load packages
+rm(list = ls())
+library(tidyverse)
+library(jsonlite)
+```
+
+```{r}
+#Import JSON
+df <- fromJSON("https://static01.nyt.com/newsgraphics/2021/12/20/us-coronavirus-deaths-2021/ff0adde21623e111d8ce103fedecf7ffc7906264/scatter.json", flatten=TRUE)
+
+#Rename and transform
+df <- subset(df) %>%
+  rename(state = name, id = geoid, per100k = deaths_per_100k, vac_rate = fully_vaccinated_pct_of_pop) %>%
+  mutate(vac_rate=vac_rate*100)
+```
+
+## Task 1
+
+```{r}
+
+#Make plot
+df %>% 
+  ggplot(aes(x=vac_rate, y=per100k)) +
+  geom_point()+ 
+#Limits and labels
+  ylim(0,20) +
+  scale_x_continuous(
+    limits = c(45,80),
+    breaks = c(45, 50, 55, 60, 65, 70, 75, 80),
+    labels = scales::percent_format(scale = 1))+
+  labs(title = "Covid-19 deaths since universal adult vaccine eligibility compared with 
+       vaccination rates",
+       subtitle = "avg. monthly deaths per 100,000",
+       y="Deaths",
+       x="Share of population fully vaccinated",
+       caption = "Kilde: https://www.nytimes.com/interactive/2021/12/28/us/covid-deaths.html?referrer=masthead")+
+  
+  geom_text(aes(label=state), size=3, 
+            nudge_x = 0, nudge_y = 0.4, 
+            check_overlap = T)+
+  
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+## Task 2
+
+```{r}
+lm(per100k ~ vac_rate, data = df)
+```
+
+As we get more of the population vaccinated, the deaths decrease. After about 60% of the population being vaccinated the confidence interval widens.
+
+```{r}
+
+#Make plot
+df %>% 
+  ggplot(aes(x=vac_rate, y=per100k)) +
+  geom_point()+ 
+#Limits and labels
+  ylim(0,20) +
+  scale_x_continuous(
+    limits = c(45,80),
+    breaks = c(45, 50, 55, 60, 65, 70, 75, 80),
+    labels = scales::percent_format(scale = 1))+
+  labs(title = "Covid-19 deaths since universal adult vaccine eligibility compared with 
+       vaccination rates",
+       subtitle = "avg. monthly deaths per 100,000",
+       y="Deaths",
+       x="Share of population fully vaccinated",
+       caption = "Kilde: https://www.nytimes.com/interactive/2021/12/28/us/covid-deaths.html?referrer=masthead")+
+  
+  geom_text(aes(label=state), size=3, 
+            nudge_x = 0, nudge_y = 0.4, 
+            check_overlap = T)+
+  
+  geom_smooth(formula = y ~ x, method = lm)+
+  
+  theme(plot.title = element_text(hjust = 0.5))
+```
