@@ -1,0 +1,199 @@
+---
+title: "Assignment_4"
+format: html
+editor: visual
+---
+
+# Assignment 4
+
+library(lubridate) #to work with date
+
+```{r}
+rm(list = ls())
+library(tidyverse)
+library(lubridate)
+library(rvest)
+library(janitor) 
+library(quantmod)
+library(fredr)
+```
+
+```{r}
+df <- read.csv("https://raw.githubusercontent.com/uit-sok-1005-v23/uit-sok-1005-v23.github.io/main/storedata.csv")
+```
+
+## **Task 1.**
+
+##### 1) For the last 3 months of 2017, calculate the total Sales by month, for Region 1 and Region 9 in the Customer_Segment, Corporate, and Consumer. This output is Table 1.
+
+```{r}
+temp <- df %>% 
+  filter(Region %in% c("Region 1","Region 9"),
+         Customer_Segment %in% c("Corporate","Consumer"),
+         stringr::str_detect(Order_Date, "2017-10|2017-11|2017-12"))
+
+Table_1 <- temp %>% 
+  group_by(month = as.yearmon(Order_Date), 
+           Customer_Segment, Region) %>% 
+  summarize_if(is.numeric, sum) %>%
+  ungroup
+  #group_by(Region,Order_Date,Customer_Segment) %>% 
+
+  #as.data.frame()
+
+Table_1
+```
+
+##### 2) Make a plot of the monthly total Sales in Region 1 and Region 13 in 2015, 2016, and 2017. This output is Figure 1.
+
+```{r}
+temp <- df %>% 
+  filter(Region %in% c("Region 1","Region 13"),
+         stringr::str_detect(Order_Date, "2015|2016|2017"))
+
+
+  
+Figure_1 <- temp %>% 
+  group_by(month = as.yearmon(Order_Date),Region) %>% 
+  summarize_if(is.numeric, sum) %>%
+  ungroup
+```
+
+```{r}
+Figure_1 %>% 
+  ggplot(aes(x=month, y=Sales)) +
+  geom_point()+
+  geom_line()+
+  labs(title = "Sales",
+       subtitle = "Per month",
+       y="Sales",
+       x="Month")+
+  
+  facet_wrap(~ factor (Region,(levels=c("Region 1", "Region 13"))), nrow = 2,
+                       labeller = as_labeller(
+                         c("Region 1" = "Region 1", 
+                           "Region 13" = "Region 13")))+
+  theme_minimal()
+```
+
+##### 3) In Figure 1, identify the months where the total Sales in Region 13 is greater than the total Sales in Region 1. This output is Table 2.
+
+```{r}
+Table_2 <- Figure_1 %>%
+  group_by(month) %>% 
+  mutate(comp = case_when(Sales == max(Sales) ~ "higher",
+      TRUE ~ "lower")) %>% 
+  ungroup
+
+Table_2 <- Table_2 %>%
+  filter(comp %in% c("higher"),Region %in% c("Region 13"))
+
+Table_2
+```
+
+Table_2 shows which months Region 13 had greater total sales than Region 1.
+
+##### 4) Find the average Profit per Customer_Segment and Product_Category in 2017, for all regions except Region 3, 5 and 8. What segment produced the highest average profit? This output is Table 3.
+
+```{r}
+temp <- df %>%
+  filter(Region %in% c("Region 1","Region 2","Region 4",
+                       "Region 6","Region 7","Region 13",
+                       "Region 9","Region 10","Region 11",
+                       "Region 12"),
+         stringr::str_detect(Order_Date, "2017"))
+
+Table_3 <- temp %>% 
+  group_by(Customer_Segment,Product_Category) %>% 
+  summarize_if(is.numeric, sum)
+```
+
+```{r}
+Table_3 %>%
+  ggplot(aes(Profit, Product_Category)) +
+  geom_col(fill="black", col="grey") +
+  scale_x_continuous(breaks=c(0, 10000, 20000, 30000, 
+                              40000, 50000, 60000))+
+  
+  labs(y = "Segment", x = "Profit", title = "Profit", 
+subtitle = "Profit") +
+  
+  
+  
+  facet_wrap(~ factor (Customer_Segment, (levels=c("Corporate", "Small Business", "Home Office", "Consumer"))), nrow = 4,
+             #  lag fire paneler 
+             #  titler 
+                       labeller = as_labeller(
+                         c("Corporate" = "Corporate", 
+                           "Small Business" = "Small Business", 
+                           "Home Office" = "Home Office",
+                           "Consumer" = "Consumer")))+   
+  theme_minimal()
+```
+
+We can see that when sorting for Customer_Segment and Product_Category, Corporate Technology Made the most profit on average in 2017.
+
+## **Task 2.**
+
+```{r}
+# Import XOM data from yahoo finance
+loadSymbols("XOM", src="yahoo" )
+XOM <- XOM
+
+# convert it to a data frame 
+XOM <- as.data.frame(XOM)
+
+XOM <- cbind(Date = rownames(XOM), XOM)
+rownames(XOM) <- 1:nrow(XOM)
+
+XOM <- XOM %>% 
+  filter(stringr::str_detect(Date, "2010|2011|2012|2013|2014|2015|2016|2017|2018|2019|2020|2021|2022"))
+
+XOM <- XOM %>%
+  group_by(month = as.yearmon(Date),XOM.Volume) %>% 
+  ungroup
+
+XOM <- XOM %>%
+  group_by(month) %>% 
+    #calculate weighted average using volume as a weight.
+  summarise(Exxon = sum(XOM.Adjusted*XOM.Volume)/sum(XOM.Volume))
+```
+
+```{r}
+fredr_set_key("31838dd97cece3bae87e1d7f9b77cb3d")
+
+Crude_Oil <- fredr(
+  series_id = "DCOILBRENTEU",
+  observation_start = as.Date("2010-01-04"),
+  observation_end = as.Date("2022-12-31")
+)
+
+Crude_Oil <- Crude_Oil %>%
+  group_by(month = as.yearmon(date),value) %>% 
+  ungroup
+
+Crude_Oil <- Crude_Oil %>%
+  group_by(month) %>% 
+  # calculate arithmetic average of xom.adjusted
+  summarise(oil= mean(value, na.rm=TRUE))
+
+XOM_oil <- merge(XOM, Crude_Oil)
+```
+
+```{r}
+XOM_oil %>% 
+  ggplot(aes(month)) + 
+  geom_line(aes(y = Exxon, color = "Exxon")) + 
+  geom_line(aes(y = oil, color = "oil")) +
+  labs(title = "Exxon and Crude oil prices",
+       subtitle = "Average per month",
+       y="Price",
+       x="Month",
+       caption = "Kilde: Yahoo Finance & FRED Economic data St. Louis FED")
+```
+
+```{r}
+lm(Exxon ~ oil, data=XOM_oil)
+```
+
+Exxon and oil has a very weak association.
