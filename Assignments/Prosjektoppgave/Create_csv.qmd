@@ -53,40 +53,44 @@ mov = read.csv('G:/UiT_Fag/SOK-1005/Assignments/Eksamensoppgave/wsdr.csv')
 #Coca-Cola
 mov_coca <- filter(mov,UPC %in% c("4900000639", "4900001550", "4900000043", "4900000987", "4900000044", "4900001571", "4900000634", "4900001267"))
 
+mov_coca <- mov_coca %>% mutate(profit = ((PRICE*MOVE)/QTY)*(PROFIT/100))
+
 mov_coca <- mov_coca %>% group_by(STORE,WEEK) %>% 
-  summarise(across(c(PROFIT, MOVE),sum),
+  summarise(across(c(profit),sum),
             .groups = 'drop') %>%
   as.data.frame()
 
 mov_coca <- mov_coca %>% filter(WEEK %in% (17:68))
-colnames(mov_coca)[colnames(mov_coca) == "PROFIT"] ="cola_profit"
-colnames(mov_coca)[colnames(mov_coca) == "MOVE"] ="cola_move"
+colnames(mov_coca)[colnames(mov_coca) == "profit"] ="cola_profit"
 
 
 #Pepsi
 mov_pepsi <- filter(mov,UPC %in% c("1200000230", "1200000231", "1200000294", "1200000295", "1200000016", "1200000090", "1200000190", "1200000844", "1200000845", "420", "421", "1200000017", "1200000053", "1200000917", "1200000918", "1200000013", "1200000050", "1200000826", "1200000841"))
 
+mov_pepsi <- mov_pepsi %>% mutate(profit = ((PRICE*MOVE)/QTY)*(PROFIT/100))
+
 mov_pepsi <- mov_pepsi %>% group_by(STORE,WEEK) %>% 
-  summarise(across(c(PROFIT, MOVE),sum),
+  summarise(across(c(profit),sum),
             .groups = 'drop') %>%
   as.data.frame()
 
 mov_pepsi <- mov_pepsi %>% filter(WEEK %in% (17:68))
-colnames(mov_pepsi)[colnames(mov_pepsi) == "PROFIT"] ="pepsi_profit"
-colnames(mov_pepsi)[colnames(mov_pepsi) == "MOVE"] ="pepsi_move"
+colnames(mov_pepsi)[colnames(mov_pepsi) == "profit"] ="pepsi_profit"
+
 
 
 #Sprite
 mov_sprite <- filter(mov,UPC %in% c("4900000551", "4900000569", "4900000579", "4900000600", "4900000927", "4900000983", "4900000984", "453", "454", "4900000129", "4900000459", "4900000897", "4900000993", "4900000132", "4900000460", "4900000174", "4900000199", "4900000669"))
 
+mov_sprite <- mov_sprite %>% mutate(profit = ((PRICE*MOVE)/QTY)*(PROFIT/100))
+
 mov_sprite <- mov_sprite %>% group_by(STORE,WEEK) %>% 
-  summarise(across(c(PROFIT, MOVE),sum),
+  summarise(across(c(profit),sum),
             .groups = 'drop') %>%
   as.data.frame()
 
 mov_sprite <- mov_sprite %>% filter(WEEK %in% (17:68))
-colnames(mov_sprite)[colnames(mov_sprite) == "PROFIT"] ="sprite_profit"
-colnames(mov_sprite)[colnames(mov_sprite) == "MOVE"] ="sprite_move"
+colnames(mov_sprite)[colnames(mov_sprite) == "profit"] ="sprite_profit"
 
 
 mov <- cbind(mov_coca,mov_pepsi,mov_sprite)
