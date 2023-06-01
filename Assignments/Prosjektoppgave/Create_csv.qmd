@@ -35,13 +35,13 @@ sample(category, 1)
 
 ```{r}
 
-count <- read.dta("G:/UiT_Fag/SOK-1005/Assignments/Eksamensoppgave/ccount.dta")
+count <- read.dta("G:/UiT_Fag/SOK-1005/Assignments/Prosjektoppgave/ccount.dta")
 
-demo <- read.dta("G:/UiT_Fag/SOK-1005/Assignments/Eksamensoppgave/demo.dta")
+demo <- read.dta("G:/UiT_Fag/SOK-1005/Assignments/Prosjektoppgave/demo.dta")
 
-UPC = read.csv('G:/UiT_Fag/SOK-1005/Assignments/Eksamensoppgave/upcsdr.csv')
+UPC = read.csv('G:/UiT_Fag/SOK-1005/Assignments/Prosjektoppgave/upcsdr.csv')
 
-mov = read.csv('G:/UiT_Fag/SOK-1005/Assignments/Eksamensoppgave/wsdr.csv')
+mov = read.csv('G:/UiT_Fag/SOK-1005/Assignments/Prosjektoppgave/wsdr.csv')
 ```
 
 ```{r}
@@ -53,44 +53,45 @@ mov = read.csv('G:/UiT_Fag/SOK-1005/Assignments/Eksamensoppgave/wsdr.csv')
 #Coca-Cola
 mov_coca <- filter(mov,UPC %in% c("4900000639", "4900001550", "4900000043", "4900000987", "4900000044", "4900001571", "4900000634", "4900001267"))
 
-mov_coca <- mov_coca %>% mutate(profit = ((PRICE*MOVE)/QTY)*(PROFIT/100))
+mov_coca <- mov_coca %>% mutate(cola_sales = (PRICE*MOVE)/QTY)
+mov_coca <- mov_coca %>% mutate(cola_profit = cola_sales*(PROFIT/100))
+
 
 mov_coca <- mov_coca %>% group_by(STORE,WEEK) %>% 
-  summarise(across(c(profit),sum),
+  summarise(across(c(cola_sales,cola_profit),sum),
             .groups = 'drop') %>%
   as.data.frame()
 
 mov_coca <- mov_coca %>% filter(WEEK %in% (17:68))
-colnames(mov_coca)[colnames(mov_coca) == "profit"] ="cola_profit"
 
 
 #Pepsi
 mov_pepsi <- filter(mov,UPC %in% c("1200000230", "1200000231", "1200000294", "1200000295", "1200000016", "1200000090", "1200000190", "1200000844", "1200000845", "420", "421", "1200000017", "1200000053", "1200000917", "1200000918", "1200000013", "1200000050", "1200000826", "1200000841"))
 
-mov_pepsi <- mov_pepsi %>% mutate(profit = ((PRICE*MOVE)/QTY)*(PROFIT/100))
+mov_pepsi <- mov_pepsi %>% mutate(pepsi_sales = (PRICE*MOVE)/QTY)
+mov_pepsi <- mov_pepsi %>% mutate(pepsi_profit = pepsi_sales*(PROFIT/100))
 
 mov_pepsi <- mov_pepsi %>% group_by(STORE,WEEK) %>% 
-  summarise(across(c(profit),sum),
+  summarise(across(c(pepsi_sales,pepsi_profit),sum),
             .groups = 'drop') %>%
   as.data.frame()
 
 mov_pepsi <- mov_pepsi %>% filter(WEEK %in% (17:68))
-colnames(mov_pepsi)[colnames(mov_pepsi) == "profit"] ="pepsi_profit"
 
 
 
 #Sprite
 mov_sprite <- filter(mov,UPC %in% c("4900000551", "4900000569", "4900000579", "4900000600", "4900000927", "4900000983", "4900000984", "453", "454", "4900000129", "4900000459", "4900000897", "4900000993", "4900000132", "4900000460", "4900000174", "4900000199", "4900000669"))
 
-mov_sprite <- mov_sprite %>% mutate(profit = ((PRICE*MOVE)/QTY)*(PROFIT/100))
+mov_sprite <- mov_sprite %>% mutate(sprite_sales = (PRICE*MOVE)/QTY)
+mov_sprite <- mov_sprite %>% mutate(sprite_profit = sprite_sales*(PROFIT/100))
 
 mov_sprite <- mov_sprite %>% group_by(STORE,WEEK) %>% 
-  summarise(across(c(profit),sum),
+  summarise(across(c(sprite_sales,sprite_profit),sum),
             .groups = 'drop') %>%
   as.data.frame()
 
 mov_sprite <- mov_sprite %>% filter(WEEK %in% (17:68))
-colnames(mov_sprite)[colnames(mov_sprite) == "profit"] ="sprite_profit"
 
 
 mov <- cbind(mov_coca,mov_pepsi,mov_sprite)
@@ -153,5 +154,5 @@ rm(unique,count,mov_cust,demo)
 ```{r}
 # Save the dataframe as a csv file
 
-write.csv(mov_cust_demo, "G:\\UiT_Fag\\SOK-1005\\Assignments\\Eksamensoppgave\\mov_cust_demo.csv", row.names=FALSE)
+write.csv(mov_cust_demo, "G:\\UiT_Fag\\SOK-1005\\Assignments\\Prosjektoppgave\\mov_cust_demo.csv", row.names=FALSE)
 ```
