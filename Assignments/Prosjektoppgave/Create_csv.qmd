@@ -4,6 +4,10 @@ format: html
 editor: visual
 ---
 
+# Prosjektoppgave Sok-1005, Vår 2023
+
+## Oppgave 1
+
 This quarto document is used to wrangle the data and create a csv for use in the exam
 
 ```{r}
