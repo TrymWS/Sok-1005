@@ -100,6 +100,9 @@ mov <- mov[, !duplicated(colnames(mov))]
 colnames(mov)[colnames(mov) == "STORE"] ="store"
 colnames(mov)[colnames(mov) == "WEEK"] ="week"
 
+mov <- mov %>% mutate(soda_sales = cola_sales+pepsi_sales+sprite_sales)
+mov <- mov %>% mutate(soda_profit = cola_profit+pepsi_profit+sprite_profit)
+
 rm(mov_coca,mov_pepsi,mov_sprite)
 ```
 
