@@ -1,0 +1,246 @@
+---
+title: "Sok-1005 Exam"
+format: html
+editor: visual
+---
+
+# Prosjektoppgave Sok-1005, Vår 2023
+
+```{r}
+rm(list=ls()) 
+library(tidyverse)
+library(rvest)
+library(janitor)
+library(lubridate)
+library(quantmod) 
+library(stringr)
+library(foreign)
+library(mefa)
+```
+
+```{r}
+# Add the csv I made into a dataframe in oppgave 1
+
+df = read.csv('https://raw.githubusercontent.com/TrymWS/Sok-1005/main/Assignments/Prosjektoppgave/mov_cust_demo.csv')
+
+# Change weeks from 17-68 to 1-52
+
+df <- df %>%
+  mutate(across(week, ~  . - 16))
+```
+
+## Oppgave 2
+
+I understood weekly reporting as a report containing 52 weekly points, since the data wrangling requested to merge with a dataset that only contained weekly datapoints
+
+```{r}
+# Choose store 73
+
+Store_73 <- df %>% filter(store %in% (73))
+
+Store_73 <- Store_73 %>% mutate(G_D_M = (grocery + dairy + meat)/1000)
+```
+
+```{r}
+Store_73 %>%
+  ggplot(aes(week, soda_sales)) +
+  geom_point(col="black") +
+  geom_line(col="blue") +
+  
+  scale_x_continuous(breaks=c(0, 5,10,15,20,25,30,35,40,45,50))+
+  
+  labs(y = "Sales", x = "Week", title = "Coca Cola sales", 
+subtitle = "Sales per week i Dollars") +
+  
+  theme_minimal()
+```
+
+```{r}
+Store_73 %>%
+  ggplot(aes(week, grocery)) +
+  geom_point(col="black") +
+  geom_line(col="blue") +
+  
+  scale_x_continuous(breaks=c(0, 5,10,15,20,25,30,35,40,45,50))+
+  
+  labs(y = "Sales", x = "Week", title = "Grocery sales", 
+subtitle = "Sales per week in Dollars") +
+  
+  theme_minimal()
+```
+
+```{r}
+Store_73 %>%
+  ggplot(aes(week, dairy)) +
+  geom_point(col="black") +
+  geom_line(col="blue") +
+  
+  scale_x_continuous(breaks=c(0, 5,10,15,20,25,30,35,40,45,50))+
+  
+  labs(y = "Sales", x = "Week", title = "Dairy sales", 
+subtitle = "Sales per week in Dollars") +
+  
+  theme_minimal()
+```
+
+```{r}
+Store_73 %>%
+  ggplot(aes(week, meat)) +
+  geom_point(col="black") +
+  geom_line(col="blue") +
+  
+  scale_x_continuous(breaks=c(0, 5,10,15,20,25,30,35,40,45,50))+
+  
+  labs(y = "Sales", x = "Week", title = "Meat sales", 
+subtitle = "Sales per week in Dollars") +
+  
+  theme_minimal()
+```
+
+```{r}
+Store_73 %>%
+  ggplot(aes(week, G_D_M)) +
+  geom_point(col="black") +
+  geom_line(col="blue") +
+  
+  scale_x_continuous(breaks=c(0, 5,10,15,20,25,30,35,40,45,50))+
+  
+  labs(y = "Sales x $1,000", x = "Week", title = "Grocery, Dairy and Meat sales", 
+subtitle = "Sales per week in 1,000 Dollars") +
+  
+  theme_minimal()
+```
+
+From the figures, we can see that groceries, dairy and meat sales correspond quite a lot with eachother, which is no big surprise.
+
+We can also see that the sale of the soda brands I chose in total does not seem to correspond with daily food consumption.
+
+There are several weeks that are distinctly more active in sales than others, for both consumption groups. Often close to special events / holidays.
+
+So sales of the various goods should be included in such a report.
+
+## Oppgave 3
+
+For the monthly report I will combine 4 weeks to represent a month, and look at that.
+
+```{r}
+df_sum <- df %>% 
+  group_by(week) %>% 
+    select_if(is.numeric) %>%
+    summarise(across(c(2:55),sum),
+            .groups = 'drop') %>%
+  as.data.frame()
+
+df_month <- df_sum %>% filter(week %in% (20:23))
+
+df_month <- df_month %>% 
+    select_if(is.numeric) %>%
+    summarise(across(c(1:55),sum),
+            .groups = 'drop') %>%
+  as.data.frame()
+
+ # summarise(across(where(is.numeric), ~ list(summary(.))))
+
+df_month_1 <- df_month %>%
+  select(1:54)
+
+df_month_1 <- df_month_1[-1] %>% 
+            t() %>% 
+            as.data.frame() %>% 
+            setNames(df_month_1[,1])
+
+df_month_1 <- cbind(var = rownames(df_month_1), df_month_1)
+rownames(df_month_1) <- 1:nrow(df_month_1)
+
+colnames(df_month_1)[colnames(df_month_1) == "86"] ="value"
+
+# Remove coupons, customer count, misc and profit, left with sales
+# Removed grocery since it dominated the chart
+df_month_1 <- df_month_1[-c(9,2,4,6,8,13,14,17,19,21,25,26,27,29,35,38,43,48,52,53,54),]
+
+df_month_1 <- df_month_1 %>% mutate(value = value/1000)
+```
+
+```{r}
+df_month_1 %>%
+  ggplot(aes(value, var)) +
+  geom_col(fill="black", col="grey") +
+  #scale_x_continuous(breaks=c(0))+
+  
+  labs(y = "Goods", x = "x $1,000", title = "Sales numbers", 
+subtitle = "Sales numbers for the various goods, measured in thousands of dollars.") +
+  
+  theme_minimal()
+```
+
+The sales of individual goods for that month is an important thing to include.
+
+Perhaps also the prior month, so you can evaluate the difference. Or last years same month, so you can see what the year over year change is.
+
+## Oppgave 4
+
+```{r}
+df_weeks <- df_sum
+df_weeks <- df_weeks %>% mutate(grocery = grocery/1000)
+
+df_weeks %>%
+  ggplot(aes(week, grocery)) +
+  geom_point(col="black") +
+  geom_line(col="blue") +
+  
+  scale_x_continuous(breaks=c(0, 5,10,15,20,25,30,35,40,45,50))+
+  
+  labs(y = "Sales x $1,000", x = "Week", title = "Grocery sales", 
+subtitle = "Sales per week in x1,000 Dollars") +
+  
+  theme_minimal()
+```
+
+```{r}
+df_weeks <- df_weeks %>% mutate(custcoun = custcoun/1000)
+
+df_weeks %>%
+  ggplot(aes(week, custcoun)) +
+  geom_point(col="black") +
+  geom_line(col="blue") +
+  
+  scale_x_continuous(breaks=c(0, 5,10,15,20,25,30,35,40,45,50))+
+  
+  labs(y = "Customer count x 1,000", x = "Week", title = "Customer count", 
+subtitle = "Amount of customers in total per week over the year") +
+  
+  theme_minimal()
+```
+
+Grocery sales and customer count can be a good thing to have when evaluating opening a new store. Aggregating all the sales should also be done.
+
+```{r}
+df_year <- df %>% 
+  group_by(store) %>% 
+    summarise(across(c(3:55),sum),
+            .groups = 'drop') %>%
+  as.data.frame()
+
+df_year <- df_year %>% mutate(custcoun = custcoun/1000)
+
+df_year <- cbind(var = rownames(df_year), df_year)
+rownames(df_year) <- 1:nrow(df_year)
+
+df_year %>%
+  ggplot(aes(var,custcoun)) +
+  #geom_point(col="black") +
+  #geom_line(col="blue") +
+  geom_col(fill="black", col="grey") +
+
+  
+  #scale_y_continuous(breaks=c(0, 5,10,15,20,25,30,35,40,45,50))+
+  
+  labs(y = "Customer count x 1,000", x = "Reset store number", title = "Customer count", 
+subtitle = "Amount of customers in total per week over the year") +
+  
+  theme_minimal()
+```
+
+Customer count based on which stores they visit can be helpful in locating new locations.
+
+One could assume that if you find multiple store, within a certain area, that is outperforming the mean, it could be a good idea to locate another store in that vicinity
